@@ -5,14 +5,14 @@ import (
 	"text/template"
 )
 
-type movie struct {
+type edit struct {
 	FieldName  string
 	FieldValue string
 }
 
 type page struct {
 	FieldName  string
-	StoreEdits []movie
+	StoreEdits []edit
 }
 
 func main() {
@@ -23,9 +23,9 @@ func main() {
 		templates.New("Body").Parse(doc)
 		templates.New("List").Parse(docList)
 
-		storeEdits := []movie{{FieldName: "Store", FieldValue: "1701"}, {FieldName: "Organization", FieldValue: "TJJohnTest"}, {FieldName: "Inventory_Group", FieldValue: "TJMMFA"}}
+		storeEdits := []edit{{FieldName: "Store", FieldValue: "1701"}, {FieldName: "Organization", FieldValue: "TJJohnTest"}, {FieldName: "Inventory_Group", FieldValue: "TJMMFA"}}
 
-		page := page{FieldName: "My FieldName", StoreEdits: storeEdits}
+		page := page{FieldName: "Store Edits", StoreEdits: storeEdits}
 		templates.Lookup("Body").Execute(w, page)
 
 	})
@@ -36,9 +36,11 @@ func main() {
 const docList = `
 <ul >
     {{range .}}
-    <li>{{.FieldName}}: {{ .FieldValue}}</li>
+	<li>{{.FieldName}}: <input>{{ .FieldValue}}</input></li>
+	<!--input ngModel name="inputStore" id="inputStore" #inputStore="ngModel" (change)="onClick()" [(ngModel)]="tstore" (keyup.enter)="onClick()" (keydown.tab)="onClick()"/-->
     {{end}}
 </ul>
+<button (click)="processFBC(newFBC.value)" class="btn btn-primary btn-sm">Update</button>
 `
 
 const doc = `
