@@ -1,13 +1,26 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"text/template"
+
+	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/jmoiron/sqlx"
 )
 
 type edit struct {
 	FieldName  string
 	FieldValue string
+}
+
+//GetStore : GetStore is a structure to hold store demographic data
+type GetStore struct {
+	FieldName  *string `db:"FieldName" json:"FieldName"`
+	FieldValue *string `db:"FieldValue" json:"FieldValue"`
 }
 
 type page struct {
@@ -16,6 +29,7 @@ type page struct {
 }
 
 func main() {
+	http.HandleFunc("/getstores", GetStores)
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Content Type", "text/html")
 
@@ -42,6 +56,46 @@ const docList = `
 </ul>
 <button (click)="processFBC(newFBC.value)" class="btn btn-primary btn-sm">Update It</button>
 `
+
+//GetStores : GetStores is a function to request store data.
+func GetStores(w http.ResponseWriter, r *http.Request) {
+	//copyfromstore := r.URL.Query().Get("copyfromstore")
+	//copytostore := r.URL.Query().Get("copytostore")
+
+	//sql := `Exec get_store_demographics $1, $2`
+	sql := `
+			select 'Store' as FieldName, '1701' as FieldValue
+		union select 'Organization','TJJohnTest'
+		union select 'Inventory_Group','TJMMFA'
+	`
+	getstores := []GetStore{}
+	err := DB().Select(&getstores, sql)
+	if err != nil {
+		log.Println(err)
+	}
+	json, err := json.Marshal(getstores)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Fprintf(w, string(json))
+}
+
+//DB : DB is a function that connects to SQL server.
+func DB() *sqlx.DB {
+	serv := os.Getenv("DB_SERVER")
+	user := os.Getenv("DB_USER")
+	pass := os.Getenv("DB_PASS")
+	database := os.Getenv("DB_DATABASE")
+
+	db, err := sqlx.Connect("mssql", fmt.Sprintf(`server=%s;user id=%s;password=%s;database=%s;log64;encrypt=disable`, serv, user, pass, database))
+
+	//db, err := sqlx.Connect("mssql", "server=localhost;user id=QUIKSERVE/terryb;password=;database=quikserve_dev;log64;encrypt=disable")
+
+	if err != nil {
+		log.Println(err)
+	}
+	return db
+}
 
 //<!--Link className="btn btn-primary" to={ `/units/${this.props.match.params.id}/edit` } -->
 
