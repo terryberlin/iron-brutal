@@ -15,6 +15,7 @@ import (
 type GetStore struct {
 	FieldName  *string `db:"FieldName" json:"FieldName"`
 	FieldValue *string `db:"FieldValue" json:"FieldValue"`
+	SortValue  *string `db:"SortValue" json:"SortValue"`
 }
 
 type page struct {
@@ -35,14 +36,9 @@ func GetStores(w http.ResponseWriter, r *http.Request) {
 	templates.New("List").Parse(docList)
 
 	copyfromstore := r.URL.Query().Get("copyfromstore")
-	//copytostore := r.URL.Query().Get("copytostore")
 
 	sql := `Exec getStoreDemographics $1`
-	// sql := `
-	// 		select 'Store' as FieldName, '1701' as FieldValue
-	// 	union select 'Organization','TJJohnTest'
-	// 	union select 'Inventory_Group','TJMMFA'
-	// `
+
 	getstores := []GetStore{}
 	err := DB().Select(&getstores, sql, copyfromstore)
 	if err != nil {
@@ -51,7 +47,6 @@ func GetStores(w http.ResponseWriter, r *http.Request) {
 
 	page := page{FieldName: "Get Stores", GetStores: getstores}
 	templates.Lookup("Body").Execute(w, page)
-
 }
 
 //DB : DB is a function that connects to SQL server.
