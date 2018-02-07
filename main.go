@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,8 +27,14 @@ type page struct {
 	StoreEdits []edit
 }
 
+type page2 struct {
+	FieldName string
+	GetStores []GetStore
+}
+
 func main() {
 	http.HandleFunc("/getstores", GetStores)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Content Type", "text/html")
 
@@ -47,37 +52,46 @@ func main() {
 	http.ListenAndServe(":8000", nil)
 }
 
-const docList = `
-<ul >
-    {{range .}}
-	<li>{{.FieldName}}: <input value={{ .FieldValue}}></input></li>
-	<!--input ngModel name="inputStore" id="inputStore" #inputStore="ngModel" (change)="onClick()" [(ngModel)]="tstore" (keyup.enter)="onClick()" (keydown.tab)="onClick()"/-->
-    {{end}}
-</ul>
-<button (click)="processFBC(newFBC.value)" class="btn btn-primary btn-sm">Update It</button>
-`
+// const docList = `
+// <ul >
+//     {{range .}}
+// 	<li>{{.FieldName}}: <input value={{ .FieldValue}}></input></li>
+// 	<!--input ngModel name="inputStore" id="inputStore" #inputStore="ngModel" (change)="onClick()" [(ngModel)]="tstore" (keyup.enter)="onClick()" (keydown.tab)="onClick()"/-->
+//     {{end}}
+// </ul>
+// <button (click)="processFBC(newFBC.value)" class="btn btn-primary btn-sm">Update It</button>
+// `
 
 //GetStores : GetStores is a function to request store data.
 func GetStores(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content Type", "text/html")
+	templates := template.New("template")
+	templates.New("Body").Parse(doc2)
+	templates.New("List").Parse(docList2)
+
 	//copyfromstore := r.URL.Query().Get("copyfromstore")
 	//copytostore := r.URL.Query().Get("copytostore")
 
 	//sql := `Exec get_store_demographics $1, $2`
 	sql := `
-			select 'Store' as FieldName, '1701' as FieldValue
-		union select 'Organization','TJJohnTest'
-		union select 'Inventory_Group','TJMMFA'
+			select 'Store' as FieldName, '1702' as FieldValue
+		union select 'Organization','TJJohnTestMe'
+		union select 'Inventory_Group','TJMMFAMe'
 	`
 	getstores := []GetStore{}
 	err := DB().Select(&getstores, sql)
 	if err != nil {
 		log.Println(err)
 	}
-	json, err := json.Marshal(getstores)
+	//json, err := json.Marshal(getstores)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Fprintf(w, string(json))
+	//fmt.Fprintf(w, string(json))
+
+	page2 := page2{FieldName: "Get Stores", GetStores: getstores}
+	templates.Lookup("Body").Execute(w, page2)
+
 }
 
 //DB : DB is a function that connects to SQL server.
@@ -150,3 +164,34 @@ const doc = `
      </body>
  </html>
  `
+
+const docList = `
+<ul >
+    {{range .}}
+	<li>{{.FieldName}}: <input value={{ .FieldValue}}></input></li>
+	<!--input ngModel name="inputStore" id="inputStore" #inputStore="ngModel" (change)="onClick()" [(ngModel)]="tstore" (keyup.enter)="onClick()" (keydown.tab)="onClick()"/-->
+    {{end}}
+</ul>
+<button (click)="processFBC(newFBC.value)" class="btn btn-primary btn-sm">Update It</button>
+`
+
+const doc2 = `
+ <!DOCTYPE html>
+ <html>
+     <head><title>{{.FieldName}}</title></head>
+     <body>
+         <h1>Store Edits</h1>
+         {{template "List" .GetStores}}
+     </body>
+ </html>
+ `
+
+const docList2 = `
+<ul >
+    {{range .}}
+	<li>{{.FieldName}}: <input value={{ .FieldValue}}></input></li>
+	<!--input ngModel name="inputStore" id="inputStore" #inputStore="ngModel" (change)="onClick()" [(ngModel)]="tstore" (keyup.enter)="onClick()" (keydown.tab)="onClick()"/-->
+    {{end}}
+</ul>
+<button (click)="processFBC(newFBC.value)" class="btn btn-primary btn-sm">Update It</button>
+`
